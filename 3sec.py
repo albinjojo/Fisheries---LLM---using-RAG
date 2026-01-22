@@ -9,12 +9,16 @@ import pickle
 import faiss
 import numpy as np
 import time
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 import torchaudio
+try:
+    torchaudio.set_audio_backend("soundfile")
+except:
+    pass
 import torch
 from speechbrain.inference import SpeakerRecognition
 import tempfile
@@ -241,6 +245,10 @@ def extract_and_track_entity(text, session_id):
             print(f"Updated Session Context: {session_keywords[session_id]}")
 
 
+
+@app.route("/")
+def index():
+    return send_from_directory('.', 'index.html')
 
 @app.route("/ask", methods=["POST"])
 def chat():

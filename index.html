@@ -37,10 +37,11 @@
     #active-question {
       position: absolute;
       top: 15%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: fit-content;
-      max-width: 90%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 0 20px;
+      box-sizing: border-box;
       text-align: center;
       background: transparent;
       padding: 16px 32px;
@@ -426,6 +427,7 @@
       background: rgba(0, 0, 0, 0.05);
       color: var(--text-color);
       border-color: var(--text-color);
+      padding: 6px 16px;
     }
 
     #voice-select option {
@@ -743,6 +745,7 @@
         rec.lang = "en-IN";
 
         let audioContext, processor, input, leftChannel = [], transcript = "";
+        let globalStream = null;
 
         function encodeWAV(samples) {
           let buffer = new ArrayBuffer(44 + samples.length * 2);
@@ -769,26 +772,41 @@
           return new Blob([view], { type: 'audio/wav' });
         }
 
-        rec.onstart = () => {
+        rec.onstart = async () => {
           micBtn.classList.add('listening');
           updateStatus("Listening...");
           leftChannel = [];
           transcript = "";
-          navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-            input = audioContext.createMediaStreamSource(stream);
-            processor = audioContext.createScriptProcessor(4096, 1, 1);
-            processor.onaudioprocess = (e) => { leftChannel.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
-            input.connect(processor);
-            processor.connect(audioContext.destination);
+
+          try {
+            if (!globalStream || !globalStream.active) {
+              globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+            // Ensure tracks enabled
+            globalStream.getAudioTracks().forEach(track => track.enabled = true);
+
+            if (!audioContext) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+              input = audioContext.createMediaStreamSource(globalStream);
+              processor = audioContext.createScriptProcessor(4096, 1, 1);
+              processor.onaudioprocess = (e) => {
+                if (micBtn.classList.contains('listening')) {
+                  leftChannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                }
+              };
+              input.connect(processor);
+              processor.connect(audioContext.destination);
+            }
+            if (audioContext.state === 'suspended') {
+              await audioContext.resume();
+            }
 
             rec.onend = () => {
               micBtn.classList.remove('listening');
               updateStatus("Processing...");
-              if (processor) processor.disconnect();
-              if (input) input.disconnect();
-              if (stream) stream.getTracks().forEach(t => t.stop());
-              if (audioContext) audioContext.close();
+
+              if (globalStream) globalStream.getTracks().forEach(t => t.enabled = false);
+              if (audioContext) audioContext.suspend();
 
               if (!transcript.trim()) {
                 updateStatus("Idle");
@@ -807,7 +825,10 @@
                 if (transcript) ask(transcript, base64data);
               };
             };
-          }).catch(e => { console.error("Mic Error:", e); updateStatus("Mic Error"); });
+          } catch (e) {
+            console.error("Mic Error:", e);
+            updateStatus("Mic Error");
+          }
         };
 
         rec.onresult = (e) => {
