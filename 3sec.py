@@ -25,7 +25,7 @@ import threading
 load_dotenv()
 
 print("\n" + "="*40)
-print("  🌱 AgrowBot Backend Initializing...  ")
+print("  🐟 FishBot Backend Initializing...  ")
 print("="*40)
 
 print("Loading Speaker Verification Model...")
@@ -167,17 +167,17 @@ def generate_audio_file(text, filename, voice="alloy"):
     except Exception as e:
         print(f"TTS Error: {e}")
 
-INSTRUCTION = """You are a helpful and jolly agricultural assistant named AgrowBot.
+INSTRUCTION = """You are a helpful and jolly fisheries assistant named FishBot.
 
 Core rules:
 - Answer the question using the provided context whenever possible.
-- Prefer Kerala-specific agricultural practices, crop varieties, pest control methods, climate, soil, and farming recommendations when they appear in the context.
+- Prefer Kerala-specific fisheries and aquaculture practices, fish species, ponds, cages, backwater farming, marine fisheries, inland fisheries, water quality, feed, diseases, and government schemes when they appear in the context.
 - If Kerala-specific information is present, do not replace it with general or global practices.
 - If context is not present, answer it normally but do not acknowledge the lack of context.
 
 Relevance handling:
-- Treat any question that can reasonably relate to agriculture, farming, crops, soil, climate, irrigation, pests, fertilizers, livestock, tools, weather, or rural livelihood as agricultural.
-- Only classify a question as non-agricultural if it is clearly and completely unrelated (for example: movies, programming, politics, celebrities).
+- Treat any question that can reasonably relate to fisheries, aquaculture, fish farming, ponds, tanks, cages, hatcheries, feed, water quality, fish diseases, breeding, harvesting, storage, transport, fishing gear, boats, nets, or fisher livelihoods as fisheries-related.
+- Only classify a question as non-fisheries if it is clearly and completely unrelated (for example: movies, programming, politics, celebrities).
 
 Refusal rule (strict and last-resort):
 - Respond with exactly: "I am sorry, I don't have the information to answer that question." only if clearly unrelated.
@@ -186,12 +186,12 @@ Tone and Style:
 - Be cheerful, happy, and encouraging!
 - Answer in very few direct words (max 2-3 short sentences).
 - Respond using direct, meaningful phrases and move straight to the answer with no introductions or filler.
-- No standard intros/outros.
-- Do not use markdown, bullets, numbering, or asterisks.
+- No markdown, bullets, numbering, or asterisks.
 
 Greeting:
-- If greeted, respond happily and ask how you can help with farming today!
+- If greeted, respond happily and ask how you can help with fisheries or fish farming today!
 """
+
 
 
 def retrieve_context(question, k=3):
@@ -219,13 +219,17 @@ def extract_and_track_entity(text, session_id):
 
     # Common agricultural entities/topics
     keywords = [
-        "mushroom", "paddy", "rice", "banana", "coconut", "arecanut", 
-        "pepper", "cardamom", "ginger", "turmeric", "rubber", "tea", "coffee",
-        "vegetable", "tomato", "chilli", "brinjal", "cow", "goat", "chicken",
-        "fertilizer", "manure", "soil", "irrigation", "corn", "maize", "wheat",
-        "sugarcane", "cassava", "yam", "pulses", "pest", "disease", "fungus",
-        "insect", "water", "climate", "planting", "harvest", "pesticide", "herbicide",
-    ]
+    "fish", "fisheries", "aquaculture", "fish farming", "pond", "tank",
+    "cage", "hatchery", "fingerling", "fry", "broodstock",
+    "tilapia", "rohu", "catla", "mrigal", "common carp", "grass carp",
+    "shrimp", "prawn", "scampi", "crab", "lobster",
+    "backwater", "brackish", "freshwater", "marine",
+    "feed", "pellet", "feeding", "fcr",
+    "water quality", "ph", "do", "ammonia", "salinity",
+    "disease", "fungal", "bacterial", "viral",
+    "aerator", "harvest", "net", "boat", "ice", "storage"
+]
+
     
     text_lower = text.lower()
     for word in keywords:
